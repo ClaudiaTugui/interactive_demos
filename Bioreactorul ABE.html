@@ -1,0 +1,756 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Bioreactorul ABE</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,750&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: panou de instrument de laborator — reactorul animat la stânga, controale + cale metabolică la dreapta, grafice dedesubt */
+:root{
+  --bg:#F2F5F2; --surface:#FFFFFF; --ink:#15231E; --muted:#5A6A63; --line:#D4DDD8; --accent:#0E7C66; --accent-soft:#DCEFE9;
+  --c-glc:#B97F0E; --c-x:#3B8A2E; --c-ac:#CC5F24; --c-bu:#B0364A; --c-ace:#2B66C6; --c-buoh:#7339BD; --c-et:#0F8497; --c-ph:#5A6A63;
+  --c-clos:#8B6A28; --c-spore:#F6F1DF;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0E1613; --surface:#16211D; --ink:#E2EBE6; --muted:#93A39C; --line:#2A3833; --accent:#41C3A2; --accent-soft:#183830;
+  --c-glc:#E2B04A; --c-x:#7CC56B; --c-ac:#F0935F; --c-bu:#E57A88; --c-ace:#7DA9F0; --c-buoh:#B58BF0; --c-et:#4FC6D8; --c-ph:#A4B3AC;
+  --c-clos:#C9A35A; --c-spore:#FFF8E2; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0E1613; --surface:#16211D; --ink:#E2EBE6; --muted:#93A39C; --line:#2A3833; --accent:#41C3A2; --accent-soft:#183830;
+  --c-glc:#E2B04A; --c-x:#7CC56B; --c-ac:#F0935F; --c-bu:#E57A88; --c-ace:#7DA9F0; --c-buoh:#B58BF0; --c-et:#4FC6D8; --c-ph:#A4B3AC;
+  --c-clos:#C9A35A; --c-spore:#FFF8E2; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+header.wrap{padding-block:28px 18px}
+.eyebrow{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--f-display);font-weight:750;font-size:clamp(30px,5vw,46px);line-height:1.05;margin:6px 0 10px;text-wrap:balance}
+h1 i{font-style:italic;font-weight:600;color:var(--accent)}
+.lede{max-width:68ch;color:var(--muted);margin:0}
+h2{font-family:var(--f-display);font-weight:600;font-size:18px;margin:0;text-wrap:balance}
+.lab{font-family:var(--f-mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+
+.main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;padding-block:6px 20px}
+@media (max-width:860px){.main{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+
+/* reactor */
+.reactor{display:flex;flex-direction:column;gap:12px}
+#reactor{width:100%;max-width:520px;aspect-ratio:4/4.6;display:block;margin:0 auto}
+.transport{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+button{font:600 14px var(--f-body);border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--surface);min-width:96px}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.clock{font-family:var(--f-mono);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;margin-left:auto}
+.clock small{font-size:12px;color:var(--muted);font-weight:400}
+.speed{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.cells-key{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+.cells-key span{display:inline-flex;align-items:center;gap:6px}
+.cells-key svg{flex:none}
+
+/* side */
+.side{display:flex;flex-direction:column;gap:16px;min-width:0}
+.phase{display:flex;gap:12px;align-items:flex-start}
+.phase-chip{font-family:var(--f-mono);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:5px 10px;border-radius:999px;border:1.5px solid currentColor;white-space:nowrap}
+.phase p{margin:0;font-size:14px;color:var(--muted)}
+.readout{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+@media (max-width:480px){.readout{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.readout div{background:var(--surface);padding:8px 10px;min-width:0}
+.readout b{display:block;font-family:var(--f-mono);font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+.readout b small{font-size:11px;color:var(--muted);font-weight:400}
+.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px}
+@media (max-width:480px){.controls{grid-template-columns:minmax(0,1fr)}}
+.ctl{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ctl label{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;font-weight:600}
+.ctl label output{font-family:var(--f-mono);font-weight:400;color:var(--accent);font-variant-numeric:tabular-nums}
+.ctl.wide{grid-column:1/-1}
+.mix{margin-top:12px}
+.mix-bar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--line);margin-top:6px}
+.mix-bar span{height:100%;transition:width .3s}
+.mix-key{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;margin-top:6px}
+.mix-key span{display:inline-flex;align-items:center;gap:6px}
+.mix-key i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.mix-key b{font-family:var(--f-mono);font-weight:600;font-variant-numeric:tabular-nums}
+.mix-ref{font-size:12.5px;color:var(--muted);margin-top:4px}
+.ctl .hint{font-size:12px;color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+select{font:14px var(--f-body);padding:6px 8px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.toggle{display:flex;gap:8px;align-items:center;font-size:13.5px;font-weight:600}
+.toggle input{accent-color:var(--accent);width:18px;height:18px}
+
+/* pathway */
+#path{width:100%;height:auto;display:block}
+#path .node rect{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+#path .node text{font:600 11.5px var(--f-body);fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+#path .node.prod rect{stroke-width:2}
+#path .note{font:10px var(--f-mono);fill:var(--muted)}
+#path .e{fill:none;stroke-linecap:round;transition:opacity .25s, stroke-width .25s}
+#path .e.core{stroke:var(--muted)}
+#path .e.acid{stroke:var(--c-bu)}
+#path .e.solv{stroke:var(--c-buoh)}
+#path .e.reas{stroke:var(--c-buoh);stroke-dasharray:3 4}
+#path .e.flow{stroke-dasharray:6 5;animation:flow 0.9s linear infinite}
+#path .e.reas.flow{stroke-dasharray:3 4}
+@keyframes flow{to{stroke-dashoffset:-11}}
+.m-core{fill:var(--muted)} .m-acid{fill:var(--c-bu)} .m-solv{fill:var(--c-buoh)}
+.pkey{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;color:var(--muted);margin-top:4px}
+.pkey span::before{content:"";display:inline-block;width:18px;height:0;border-top:2.5px solid;vertical-align:middle;margin-right:6px}
+.pkey .a::before{border-color:var(--c-bu)} .pkey .s::before{border-color:var(--c-buoh)} .pkey .r::before{border-color:var(--c-buoh);border-top-style:dashed}
+
+/* charts */
+.charts{display:grid;gap:16px;padding-block:0 20px}
+.chart-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 16px;margin-bottom:8px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px}
+.legend span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.legend i{width:12px;height:3px;border-radius:2px;display:inline-block}
+.legend b{font-family:var(--f-mono);font-weight:600;font-size:12.5px;font-variant-numeric:tabular-nums}
+canvas.ch{width:100%;display:block}
+#chP{height:260px}
+.small3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:760px){.small3{grid-template-columns:minmax(0,1fr)}}
+.small3 canvas{height:150px}
+.chart-foot{font-size:12.5px;color:var(--muted);margin-top:6px}
+
+/* notes */
+.notes{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px;padding-block:0 36px}
+@media (max-width:860px){.notes{grid-template-columns:minmax(0,1fr)}}
+#log{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:14px}
+#log li{display:grid;grid-template-columns:62px minmax(0,1fr);gap:10px;border-top:1px solid var(--line);padding-top:8px}
+#log li time{font-family:var(--f-mono);font-size:12.5px;color:var(--accent);font-variant-numeric:tabular-nums}
+#log li.empty{display:block;color:var(--muted)}
+.notes p{margin:8px 0 0;max-width:65ch}
+.notes .panel p:first-of-type{margin-top:10px}
+@media (prefers-reduced-motion: reduce){#path .e.flow{animation:none}}
+</style>
+
+<header class="wrap">
+  <div class="eyebrow">Fermentație ABE · lot (batch) 72 h · anaerob, 37 °C</div>
+  <h1>Bioreactorul ABE cu <i>Clostridium acetobutylicum</i></h1>
+  <p class="lede">Culturile încep prin a produce acizi (acetat, butirat). Când pH-ul scade și acizii nedisociați se acumulează, celulele comută pe solvenți: reasimilează acizii și produc acetonă, butanol și etanol în raport aproximativ 3 : 6 : 1. Modifică pH-ul, temperatura sau glucoza și urmărește cum se schimbă producția.</p>
+</header>
+
+<div class="wrap main">
+  <section class="panel reactor" aria-label="Bioreactor">
+    <canvas id="reactor" role="img" aria-label="Bioreactor animat cu celule, bule de gaz și agitator"></canvas>
+    <div class="cells-key" aria-label="Legenda celulelor">
+      <span><svg width="22" height="10"><rect x="2" y="3" width="18" height="5" rx="2.5" fill="var(--c-x)"/></svg>celulă vegetativă</span>
+      <span><svg width="22" height="12"><ellipse cx="11" cy="6" rx="9" ry="4.6" fill="var(--c-clos)"/></svg>formă clostridială (granuloză)</span>
+      <span><svg width="22" height="10"><rect x="2" y="3" width="18" height="5" rx="2.5" fill="var(--c-x)"/><ellipse cx="15" cy="5.5" rx="3.6" ry="3" fill="var(--c-spore)" stroke="var(--ink)" stroke-width=".8"/></svg>endospor subterminal</span>
+    </div>
+    <div class="transport">
+      <button id="play" class="primary" type="button">Pornește</button>
+      <button id="reset" type="button">Reia lotul</button>
+      <div class="speed"><label for="speed">Viteză</label><input id="speed" type="range" min="0.5" max="8" step="0.5" value="2"><output id="speedO">2 h/s</output></div>
+      <div class="clock" aria-live="off"><span id="clock">0.0</span> <small>h din 72</small></div>
+    </div>
+  </section>
+
+  <aside class="side">
+    <section class="panel">
+      <div class="phase">
+        <span id="phaseChip" class="phase-chip">Acidogeneză</span>
+        <p id="phaseText">Celulele cresc exponențial și produc acetat și butirat, plus H₂ și CO₂.</p>
+      </div>
+      <div class="readout" style="margin-top:14px">
+        <div><span class="lab">Glucoză</span><b id="rS">60 <small>g/L</small></b></div>
+        <div><span class="lab">Biomasă</span><b id="rX">0.05 <small>g/L</small></b></div>
+        <div><span class="lab">pH</span><b id="rpH">6.40</b></div>
+        <div><span class="lab">Gaz H₂+CO₂</span><b id="rG">0 <small>L/L·h</small></b></div>
+        <div><span class="lab">Solvenți ABE</span><b id="rABE">0 <small>g/L</small></b></div>
+        <div><span class="lab">Butanol/ABE</span><b id="rRat">– <small>%</small></b></div>
+        <div><span class="lab">Randament</span><b id="rY">– <small>g/g</small></b></div>
+        <div><span class="lab">Recuperat</span><b id="rRec">0 <small>g/L</small></b></div>
+      </div>
+      <div class="mix" aria-label="Compoziția solvenților">
+        <span class="lab">Compoziția solvenților ABE · % masic</span>
+        <div class="mix-bar"><span id="mxA" style="background:var(--c-ace);width:0"></span><span id="mxB" style="background:var(--c-buoh);width:0"></span><span id="mxE" style="background:var(--c-et);width:0"></span></div>
+        <div class="mix-key"><span><i style="background:var(--c-ace)"></i>Acetonă <b id="pA">–</b></span><span><i style="background:var(--c-buoh)"></i>Butanol <b id="pB">–</b></span><span><i style="background:var(--c-et)"></i>Etanol <b id="pE">–</b></span></div>
+        <div class="mix-ref">Referință clasică 3 : 6 : 1 = 30 % · 60 % · 10 %</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Condiții de cultivare</h2>
+      <div class="controls" style="margin-top:12px">
+        <div class="ctl">
+          <label for="glc">Glucoză inițială <output id="glcO">60 g/L</output></label>
+          <input id="glc" type="range" min="20" max="90" step="5" value="60">
+          <span class="hint">Schimbarea repornește lotul.</span>
+        </div>
+        <div class="ctl">
+          <label for="temp">Temperatură <output id="tempO">37 °C</output></label>
+          <input id="temp" type="range" min="30" max="42" step="1" value="37">
+          <span class="hint">Optim în jur de 35–37 °C.</span>
+        </div>
+        <div class="ctl">
+          <label for="phc">Control pH</label>
+          <select id="phc">
+            <option value="">Fără control (pH liber)</option>
+            <option value="5.0">Menține pH ≥ 5,0</option>
+            <option value="5.5">Menține pH ≥ 5,5</option>
+            <option value="6.0">Menține pH ≥ 6,0</option>
+          </select>
+          <span class="hint">Adăugare de bază (NH₄OH) când pH-ul scade.</span>
+        </div>
+        <div class="ctl">
+          <label for="redox">Echilibru redox (NADH)</label>
+          <select id="redox">
+            <option value="0">Glucoză (standard)</option>
+            <option value="0.35">Presiune parțială de H₂ ridicată</option>
+            <option value="0.7">Glucoză + glicerol (2 : 1)</option>
+            <option value="1">Glucoză + metil-viologen</option>
+          </select>
+          <span class="hint">Mai mult NADH împinge carbonul spre butanol și etanol, în loc de acetonă.</span>
+        </div>
+        <div class="ctl">
+          <span class="toggle"><input id="strip" type="checkbox"><label for="strip">Stripare cu gaz</label></span>
+          <span class="hint">Gazul recirculat antrenează butanolul spre un condensator și reduce toxicitatea.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Calea metabolică, în timp real</h2>
+      <svg id="path" viewBox="0 0 360 290" role="img" aria-label="Calea ABE: glucoză, piruvat, acetil-CoA, ramurile acide și solventogene">
+        <defs>
+          <marker id="mk-core" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path class="m-core" d="M0 0L8 4L0 8z"/></marker>
+          <marker id="mk-acid" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path class="m-acid" d="M0 0L8 4L0 8z"/></marker>
+          <marker id="mk-solv" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path class="m-solv" d="M0 0L8 4L0 8z"/></marker>
+        </defs>
+        <g id="edges">
+          <path id="e-gp" class="e core" d="M180 33V51" marker-end="url(#mk-core)"/>
+          <path id="e-pa" class="e core" d="M180 77V97" marker-end="url(#mk-core)"/>
+          <path id="e-acet" class="e acid" d="M136 104H98" marker-end="url(#mk-acid)"/>
+          <path id="e-acetR" class="e reas" d="M94 117H132" marker-end="url(#mk-solv)"/>
+          <path id="e-etoh" class="e solv" d="M224 110H266" marker-end="url(#mk-solv)"/>
+          <path id="e-aacoa" class="e core" d="M180 123V145" marker-end="url(#mk-core)"/>
+          <path id="e-aa" class="e solv" d="M234 158H258" marker-end="url(#mk-solv)"/>
+          <path id="e-acetone" class="e solv" d="M306 171V199" marker-end="url(#mk-solv)"/>
+          <path id="e-bcoa" class="e core" d="M180 171V199" marker-end="url(#mk-core)"/>
+          <path id="e-but" class="e acid" d="M136 208H98" marker-end="url(#mk-acid)"/>
+          <path id="e-butR" class="e reas" d="M94 221H132" marker-end="url(#mk-solv)"/>
+          <path id="e-buoh" class="e solv" d="M180 225V251" marker-end="url(#mk-solv)"/>
+        </g>
+        <g class="node"><rect x="140" y="8" width="80" height="24" rx="5"/><text x="180" y="20">Glucoză</text></g>
+        <g class="node"><rect x="144" y="52" width="72" height="24" rx="5"/><text x="180" y="64">Piruvat</text></g>
+        <text class="note" x="186" y="91">→ CO₂, H₂</text>
+        <g class="node"><rect x="138" y="98" width="84" height="24" rx="5"/><text x="180" y="110">Acetil-CoA</text></g>
+        <g class="node prod"><rect x="16" y="98" width="76" height="24" rx="5" style="stroke:var(--c-ac)"/><text x="54" y="110">Acetat</text></g>
+        <g class="node prod"><rect x="268" y="98" width="76" height="24" rx="5" style="stroke:var(--c-et)"/><text x="306" y="110">Etanol</text></g>
+        <g class="node"><rect x="126" y="146" width="108" height="24" rx="5"/><text x="180" y="158">Acetoacetil-CoA</text></g>
+        <g class="node"><rect x="260" y="146" width="92" height="24" rx="5"/><text x="306" y="158">Acetoacetat</text></g>
+        <text class="note" x="312" y="190">→ CO₂</text>
+        <text class="note" x="228" y="124">2 NADH</text>
+        <text class="note" x="186" y="242">2 NADH</text>
+        <g class="node prod"><rect x="268" y="200" width="76" height="24" rx="5" style="stroke:var(--c-ace)"/><text x="306" y="212">Acetonă</text></g>
+        <g class="node"><rect x="136" y="200" width="88" height="24" rx="5"/><text x="180" y="212">Butiril-CoA</text></g>
+        <g class="node prod"><rect x="16" y="196" width="76" height="24" rx="5" style="stroke:var(--c-bu)"/><text x="54" y="208">Butirat</text></g>
+        <g class="node prod"><rect x="140" y="252" width="80" height="24" rx="5" style="stroke:var(--c-buoh)"/><text x="180" y="264">Butanol</text></g>
+        <text class="note" x="4" y="140">CoA-transferază</text>
+        <text class="note" x="4" y="244">(ctfA/B)</text>
+      </svg>
+      <div class="pkey"><span class="a">acidogeneză</span><span class="s">solventogeneză</span><span class="r">reasimilarea acizilor</span></div>
+      <p class="chart-foot">Grosimea săgeților urmează fluxul de carbon din model în acest moment.</p>
+    </section>
+  </aside>
+</div>
+
+<section class="wrap charts" aria-label="Grafice">
+  <div class="panel">
+    <div class="chart-head">
+      <h2>Produși de fermentație <span class="lab">g/L în mediu</span></h2>
+      <div class="legend" id="legP"></div>
+    </div>
+    <canvas id="chP" class="ch" role="img" aria-label="Concentrațiile de acetat, butirat, acetonă, butanol și etanol în timp"></canvas>
+    <p class="chart-foot">Linie plină: lotul rulat. Linie punctată: prognoza modelului cu setările curente. Banda colorată marchează faza de solventogeneză.</p>
+  </div>
+  <div class="small3">
+    <div class="panel"><div class="chart-head"><h2>Glucoză</h2><span class="lab">g/L</span></div><canvas id="chS" class="ch"></canvas></div>
+    <div class="panel"><div class="chart-head"><h2>Biomasă</h2><span class="lab">g/L masă uscată</span></div><canvas id="chX" class="ch"></canvas></div>
+    <div class="panel"><div class="chart-head"><h2>pH</h2><span class="lab">scală 4–7</span></div><canvas id="chpH" class="ch"></canvas></div>
+  </div>
+</section>
+
+<section class="wrap notes">
+  <div class="panel">
+    <h2>Jurnalul lotului</h2>
+    <ol id="log"><li class="empty">Evenimentele apar aici pe măsură ce rulează fermentația.</li></ol>
+  </div>
+  <div class="panel">
+    <h2>De ce comută celulele?</h2>
+    <p>Acidul acetic și butiric (pKa ≈ 4,8) trec prin membrană în forma nedisociată și acidifiază citoplasma. Când pH-ul extern coboară spre 4,5–5 și acizii nedisociați depășesc ~1–2 g/L, regulatorul Spo0A activează operonul <i>sol</i>: aldehid/alcool-dehidrogenaza (adhE) și CoA-transferaza (ctfA/B). Acizii sunt preluați înapoi și transformați în acetonă și butanol.</p>
+    <p>Dacă pH-ul este ținut ridicat (≥ 5,5–6), acizii rămân disociați, semnalul nu apare și cultura rămâne acidogenă. Butanolul devine toxic pentru membrană în jur de 12–13 g/L, de aceea în lot simplu rămâne glucoză nefermentată; stripping-ul cu gaz scoate butanolul și permite consumul complet.</p>
+    <p>Raportul 3 : 6 : 1 nu este o constantă. Acetona apare doar când CoA-transferaza preia un acid: un mol de acetat sau butirat dă un mol de acetonă. Butanolul și etanolul consumă câte 2 NADH. Când celula are NADH în exces (glicerol, metil-viologen, H₂ sub presiune), gena <i>adhE2</i> deviază carbonul spre alcooli, iar ctfA/B și adc sunt reprimate. Cu glicerol la pH 6 cultura devine alcoologenă: butanol și etanol, aproape fără acetonă.</p>
+    <p class="chart-foot">Modelul este simplificat (cinetică Monod, inhibiție de produs, comutare declanșată de acizii nedisociați), cu valori apropiate de cele din literatură pentru tulpina ATCC 824. Este un instrument didactic, nu un simulator calibrat.</p>
+  </div>
+</section>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const TEND = 72, DT = 0.02, REC = 0.25;
+
+  const P = { S0: 60, T: 37, pHset: null, strip: false, redox: 0, speed: 2 };
+  let st, hist, ghost, events, flags, playing = false, simAcc = 0, lastRec = -1;
+
+  // ---------- model ----------
+  function newState() {
+    return { t: 0, S: P.S0, X: 0.05, Ac: 0, Bu: 0, Ace: 0, BuOH: 0, EtOH: 0, s: 0, pH: 6.4, rec: 0,
+      fl: { glc: 0, acAc: 0, acBu: 0, et: 0, ace: 0, bol: 0, uAc: 0, uBu: 0 }, inhB: 1, gas: 0 };
+  }
+  function pHof(o) {
+    let p = Math.max(4.3, Math.min(6.4, 6.4 - 0.65 * (o.Ac + o.Bu)));
+    if (P.pHset !== null && p < P.pHset) p = P.pHset;
+    return p;
+  }
+  function step(o, dt) {
+    const Tf = Math.exp(-Math.pow((P.T - 36.5) / 6, 2));
+    o.pH = pHof(o);
+    const HB = o.Bu / (1 + Math.pow(10, o.pH - 4.82));
+    const HA = o.Ac / (1 + Math.pow(10, o.pH - 4.76));
+    const und = HB + HA;
+    o.und = und;
+    const sig = 1 / (1 + Math.exp(-(und - 1.3) / 0.18)) * (o.S > 1.5 ? 1 : 0);
+    // temperatura ridicată favorizează rămânerea în faza acidă
+    const tPen = P.T > 38 ? 1 - 0.12 * (P.T - 38) : 1;
+    const tgt = Math.max(sig, o.s > 0.4 ? 1 : 0) * tPen;
+    o.s = Math.min(1, o.s + 0.6 * Math.max(0, tgt - o.s) * dt);
+    const inhB = Math.max(0, 1 - Math.pow(o.BuOH / 12.5, 1.5));
+    o.inhB = inhB;
+    const inhA = 1 / (1 + Math.pow(und / 3, 2));
+    const mu = 0.32 * Tf * (o.S / (o.S + 2)) * inhB * inhA * (1 - 0.85 * o.s) * Math.max(0, 1 - o.X / 5);
+    const kd = 0.004 + (o.S < 0.5 ? 0.02 : 0);
+    const qS = 0.55 * Tf * (o.S / (o.S + 3)) * inhB * (0.4 + 0.6 * inhA);
+    const rS = Math.min(qS * o.X, o.S / dt);
+    const s = o.s;
+    // R = cât NADH în plus are celula (0 standard … 1 metil-viologen); c = activitatea CoA-transferazei/adc
+    const R = P.redox, aFrac = 0.65 * R, c = 1 - 0.85 * R;
+    // acizi: în faza acidă (mai puțini când NADH-ul e deviat spre alcooli) + producție continuă, ciclică, în solventogeneză
+    const rAc = 0.11 * rS * (1 - s) * (1 - aFrac) + 0.05 * rS * s * c;
+    const rBu = 0.26 * rS * (1 - s) * (1 - aFrac) + 0.10 * rS * s * c;
+    // preluarea acizilor prin CoA-transferază (ctfA/B): Km mare, deci depinde de concentrația acizilor
+    const kre = 0.6 * s * c * o.X * Tf * (0.3 + 0.7 * inhB) * (o.S / (o.S + 1));
+    const uBu = Math.min(kre * 0.4 * Math.max(0, o.Bu - 0.3) / (o.Bu + 1.0), o.Bu / dt);
+    const uAc = Math.min(kre * 0.3 * Math.max(0, o.Ac - 0.3) / (o.Ac + 1.0), o.Ac / dt);
+    // acetonă: 1 mol per mol de acid preluat (acetoacetil-CoA → acetoacetat → acetonă + CO₂)
+    const molAce = uAc / 60 + uBu / 88;
+    const rAce = 58 * molAce;
+    const gAce = Math.min(rS * s, 180 * molAce);
+    // restul carbonului solventogen + acetil-CoA din acetat + ramura alcoologenă → butanol / etanol (consumă NADH)
+    const rem = Math.max(0, rS * s - gAce) + 90 * uAc / 60 + rS * (1 - s) * aFrac;
+    const fe = 0.16 + 0.25 * R;
+    const rBuOH = rem * (1 - fe) * 0.41 * 0.82;
+    const rEt = rem * fe * 0.51 * 0.82;
+    let stB = 0, stA = 0, stE = 0;
+    if (P.strip) { stB = 0.12 * o.BuOH; stA = 0.15 * o.Ace; stE = 0.05 * o.EtOH; }
+    o.X = Math.max(0, o.X + (mu - kd) * o.X * dt);
+    o.S = Math.max(0, o.S - rS * dt);
+    o.Ac = Math.max(0, o.Ac + (rAc - uAc) * dt);
+    o.Bu = Math.max(0, o.Bu + (rBu - uBu) * dt);
+    o.BuOH = Math.max(0, o.BuOH + (rBuOH + 0.84 * uBu - stB) * dt);
+    o.Ace = Math.max(0, o.Ace + (rAce - stA) * dt);
+    o.EtOH = Math.max(0, o.EtOH + (rEt - stE) * dt);
+    o.rec += (stB + stA + stE) * dt;
+    o.gas = rS * 0.49 * (1 - 0.25 * s);
+    o.fl = { glc: rS, acAc: rAc, acBu: rBu, et: rEt, ace: rAce, bol: rBuOH + 0.84 * uBu, uAc, uBu, solBu: rBuOH };
+    o.t += dt;
+  }
+  const snap = o => ({ t: o.t, S: o.S, X: o.X, Ac: o.Ac, Bu: o.Bu, Ace: o.Ace, BuOH: o.BuOH, EtOH: o.EtOH, pH: pHof(o), s: o.s });
+  function computeGhost() {
+    const o = JSON.parse(JSON.stringify(st));
+    ghost = [snap(o)];
+    let next = Math.floor(o.t / REC) * REC + REC;
+    while (o.t < TEND - 1e-9) {
+      step(o, DT);
+      if (o.t >= next - 1e-9) { ghost.push(snap(o)); next += REC; }
+    }
+  }
+
+  // ---------- events ----------
+  function logEvent(text) {
+    events.push({ t: st.t, text });
+    const ul = $('log');
+    if (ul.querySelector('.empty')) ul.innerHTML = '';
+    const li = document.createElement('li');
+    li.innerHTML = `<time>${st.t.toFixed(1)} h</time><span></span>`;
+    li.lastChild.textContent = text;
+    ul.appendChild(li);
+  }
+  function checkEvents() {
+    const f = flags;
+    if (!f.ph5 && st.pH < 5.05 && P.pHset === null) { f.ph5 = true; logEvent(`pH-ul a coborât sub 5 (acetat ${st.Ac.toFixed(1)} g/L, butirat ${st.Bu.toFixed(1)} g/L).`); }
+    if (!f.switch && st.s > 0.5) { f.switch = true; f.tSwitch = st.t;
+      logEvent(`Comutare la solventogeneză: acizii nedisociați ating ${st.und.toFixed(1)} g/L la pH ${st.pH.toFixed(2)}. Celulele reasimilează acizii.`); }
+    if (!f.reas && f.switch && st.Bu < 0.6 * f.buMax && f.buMax > 0.8) { f.reas = true; logEvent(`Butiratul scade de la ${f.buMax.toFixed(1)} la ${st.Bu.toFixed(1)} g/L, iar pH-ul urcă din nou (${st.pH.toFixed(2)}).`); }
+    f.buMax = Math.max(f.buMax || 0, st.Bu);
+    if (!f.held && P.pHset !== null && st.t > 30 && st.s < 0.2) { f.held = true; logEvent(`Cu pH-ul menținut la ${P.pHset.toFixed(1)}, acidul butiric rămâne disociat și cultura nu comută. Se acumulează acizi (${(st.Ac + st.Bu).toFixed(1)} g/L).`); }
+    if (!f.tox && st.inhB < 0.3 && st.S > 3) { f.tox = true; logEvent(`Butanolul (${st.BuOH.toFixed(1)} g/L) inhibă membrana; metabolismul încetinește cu ${st.S.toFixed(0)} g/L glucoză rămasă.`); }
+    const abeT = st.Ace + st.BuOH + st.EtOH;
+    if (!f.alc && abeT > 3 && st.Ace / abeT < 0.12) { f.alc = true; logEvent(`Fermentație alcoologenă: acetona are doar ${(100 * st.Ace / abeT).toFixed(0)} % din solvenți; etanolul ajunge la ${(100 * st.EtOH / abeT).toFixed(0)} %.`); }
+    if (!f.glc && st.S < 1) { f.glc = true; logEvent(`Glucoza este epuizată. Total solvenți: ${(st.Ace + st.BuOH + st.EtOH + st.rec).toFixed(1)} g/L.`); }
+    if (!f.spore && f.switch && st.t - f.tSwitch > 16) { f.spore = true; logEvent('Apar endospori subterminali în celulele clostridiale.'); }
+    if (!f.end && st.t >= TEND - 1e-6) { f.end = true; logEvent(`Sfârșitul lotului: acetonă ${st.Ace.toFixed(1)}, butanol ${st.BuOH.toFixed(1)}, etanol ${st.EtOH.toFixed(1)} g/L în mediu${P.strip ? ` + ${st.rec.toFixed(1)} g/L recuperat` : ''}.`); }
+  }
+
+  function reset() {
+    st = newState(); hist = [snap(st)]; events = []; flags = {}; lastRec = 0; simAcc = 0;
+    $('log').innerHTML = '<li class="empty">Evenimentele apar aici pe măsură ce rulează fermentația.</li>';
+    cells.length = 0; bubbles.length = 0;
+    computeGhost(); updateDOM(); drawCharts();
+  }
+
+  // ---------- theme ----------
+  let C = {};
+  function readTokens() {
+    const cs = getComputedStyle(document.documentElement);
+    const g = n => cs.getPropertyValue(n).trim();
+    C = { bg: g('--bg'), surface: g('--surface'), ink: g('--ink'), muted: g('--muted'), line: g('--line'), accent: g('--accent'),
+      glc: g('--c-glc'), x: g('--c-x'), ac: g('--c-ac'), bu: g('--c-bu'), ace: g('--c-ace'), buoh: g('--c-buoh'), et: g('--c-et'), ph: g('--c-ph'),
+      clos: g('--c-clos'), spore: g('--c-spore'), dark: cs.colorScheme && cs.colorScheme.includes('dark') };
+    drawCharts();
+  }
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readTokens);
+  new MutationObserver(readTokens).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  // ---------- canvas helpers ----------
+  const dpr = () => Math.min(2, window.devicePixelRatio || 1);
+  function fit(cv) {
+    const r = cv.getBoundingClientRect(); const d = dpr();
+    const w = Math.max(10, Math.round(r.width * d)), h = Math.max(10, Math.round(r.height * d));
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    const ctx = cv.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0);
+    return { ctx, W: r.width, H: r.height };
+  }
+  function rr(ctx, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+
+  // ---------- reactor ----------
+  const cv = $('reactor');
+  const cells = [], bubbles = [];
+  let angle = 0, G = {};
+  function geom(W, H) {
+    const x0 = W * 0.2, x1 = W * 0.8, top = H * 0.16, bot = H * 0.94;
+    const ly = top + (bot - top) * 0.17;
+    return { W, H, x0, x1, top, bot, ly, sx: W / 2 };
+  }
+  function spawnCell() {
+    return { x: G.x0 + 10 + Math.random() * (G.x1 - G.x0 - 20), y: G.ly + 10 + Math.random() * (G.bot - G.ly - 20),
+      a: Math.random() * Math.PI, va: (Math.random() - .5) * 1.5, u: Math.random(), v: Math.random(), sz: 0.85 + Math.random() * 0.35 };
+  }
+  function drawReactor(dtReal) {
+    const { ctx, W, H } = fit(cv);
+    G = geom(W, H);
+    const { x0, x1, top, bot, ly, sx } = G;
+    ctx.clearRect(0, 0, W, H);
+    const live = playing && st.t < TEND;
+    const act = Math.min(1, st.fl.glc / 2.2);
+
+    // motor + shaft
+    ctx.fillStyle = C.muted; rr(ctx, sx - 26, H * 0.015, 52, H * 0.06, 6); ctx.fill();
+    ctx.fillStyle = C.surface; ctx.font = `600 10px ${getComputedStyle(document.body).fontFamily}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('M', sx, H * 0.045);
+    // head plate
+    ctx.fillStyle = C.line; ctx.fillRect(x0 - 14, top - 8, x1 - x0 + 28, 8);
+
+    // jacket (temperature)
+    const tw = (P.T - 30) / 12; // 0..1
+    const jc = `hsla(${210 - 190 * tw}, 70%, ${C.dark ? 55 : 50}%, 0.28)`;
+    ctx.fillStyle = jc; rr(ctx, x0 - 12, ly - 4, x1 - x0 + 24, bot - ly + 16, 26); ctx.fill();
+
+    // vessel glass
+    ctx.save(); rr(ctx, x0, top, x1 - x0, bot - top, 22); ctx.clip();
+    ctx.fillStyle = C.dark ? 'rgba(255,255,255,0.03)' : 'rgba(20,60,50,0.03)'; ctx.fillRect(x0, top, x1 - x0, bot - top);
+    // headspace label
+    // liquid
+    const turb = Math.min(1, st.X / 4.5);
+    const lg = ctx.createLinearGradient(0, ly, 0, bot);
+    const a1 = 0.22 + 0.5 * turb, a2 = 0.32 + 0.55 * turb;
+    lg.addColorStop(0, `rgba(${Math.round(226 - 30 * turb)},${Math.round(190 - 34 * turb)},${Math.round(116 - 20 * turb)},${a1})`);
+    lg.addColorStop(1, `rgba(${Math.round(206 - 40 * turb)},${Math.round(162 - 40 * turb)},${Math.round(92 - 24 * turb)},${a2})`);
+    ctx.fillStyle = lg;
+    ctx.beginPath(); ctx.moveTo(x0, ly);
+    const wob = live ? 1 : 0.3;
+    for (let x = x0; x <= x1; x += 6) ctx.lineTo(x, ly + Math.sin(x * 0.07 + angle * 1.3) * 1.6 * wob);
+    ctx.lineTo(x1, bot); ctx.lineTo(x0, bot); ctx.closePath(); ctx.fill();
+
+    // foam
+    const foam = st.gas * 6;
+    if (foam > 0.5) {
+      ctx.fillStyle = C.dark ? 'rgba(255,248,230,0.55)' : 'rgba(255,252,240,0.9)';
+      for (let x = x0 + 4; x < x1 - 4; x += 7) {
+        const r = 2 + Math.min(5, foam) * (0.5 + 0.5 * Math.sin(x * 1.7 + angle * 0.5));
+        ctx.beginPath(); ctx.arc(x, ly - 1, r, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    // cells
+    const target = Math.min(240, Math.round(14 + st.X * 46));
+    while (cells.length < target) cells.push(spawnCell());
+    if (cells.length > target + 4) cells.length = target;
+    const sporeFrac = flags.switch ? st.s * Math.max(0, Math.min(0.55, (st.t - flags.tSwitch - 14) / 30)) : 0;
+    const closFrac = st.s * 0.75;
+    const cxL = (x0 + sx) / 2, cxR = (sx + x1) / 2, cy = (ly + bot) / 2;
+    const spd = (live ? 34 : 6) * dtReal;
+    for (const c of cells) {
+      const left = c.x < sx;
+      const dx = c.x - (left ? cxL : cxR), dy = c.y - cy;
+      const d = Math.hypot(dx, dy) || 1, dir = left ? -1 : 1;
+      c.x += (-dy / d) * spd * dir + (Math.random() - .5) * spd * 0.8;
+      c.y += (dx / d) * spd * dir * 1.4 + (Math.random() - .5) * spd * 0.8;
+      c.a += c.va * dtReal;
+      if (c.x < x0 + 8) c.x = x0 + 8; if (c.x > x1 - 8) c.x = x1 - 8;
+      if (Math.abs(c.x - sx) < 4) c.x += left ? -4 : 4;
+      if (c.y < ly + 8) c.y = ly + 8; if (c.y > bot - 8) c.y = bot - 8;
+      const L = 10 * c.sz, w = 3.6 * c.sz;
+      ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.a);
+      if (c.u < sporeFrac) {
+        ctx.fillStyle = C.clos; rr(ctx, -L / 2, -w / 2 - .3, L, w + .6, w / 2); ctx.fill();
+        ctx.fillStyle = C.spore; ctx.strokeStyle = C.ink; ctx.lineWidth = 0.7;
+        ctx.beginPath(); ctx.ellipse(L * 0.22, 0, 2.6, 2.2, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      } else if (c.u < closFrac) {
+        ctx.fillStyle = C.clos; ctx.beginPath(); ctx.ellipse(0, 0, L * 0.58, w * 0.95, 0, 0, Math.PI * 2); ctx.fill();
+      } else {
+        ctx.fillStyle = C.x; rr(ctx, -L / 2, -w / 2, L, w, w / 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // bubbles (self-produced H2 + CO2)
+    if (live) {
+      let n = st.gas * 40 * dtReal * Math.min(1.5, P.speed / 2 + 0.5);
+      while (n > 0) { if (Math.random() < n) bubbles.push({ x: x0 + 8 + Math.random() * (x1 - x0 - 16), y: ly + 20 + Math.random() * (bot - ly - 30), r: 1.4 + Math.random() * 2.8, p: Math.random() * 6 }); n -= 1; }
+      if (P.strip) for (let k = 0; k < 3; k++) if (Math.random() < 0.6) bubbles.push({ x: sx + (Math.random() - .5) * (x1 - x0) * 0.5, y: bot - 10, r: 2 + Math.random() * 2.5, p: Math.random() * 6 });
+    }
+    ctx.strokeStyle = C.dark ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.95)'; ctx.lineWidth = 1;
+    ctx.fillStyle = C.dark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.35)';
+    for (let i = bubbles.length - 1; i >= 0; i--) {
+      const b = bubbles[i];
+      if (live) { b.y -= (40 + b.r * 14) * dtReal; b.x += Math.sin(b.p + b.y * 0.08) * 0.4; }
+      if (b.y < ly + 2) { bubbles.splice(i, 1); continue; }
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+    if (bubbles.length > 400) bubbles.splice(0, bubbles.length - 400);
+    ctx.restore();
+
+    // shaft + Rushton turbines
+    const shBot = bot - (bot - ly) * 0.12;
+    ctx.strokeStyle = C.muted; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(sx, H * 0.075); ctx.lineTo(sx, shBot); ctx.stroke();
+    if (live) angle += dtReal * 6;
+    for (const fy of [0.5, 0.86]) {
+      const y = ly + (bot - ly) * fy; const R = (x1 - x0) * 0.16;
+      ctx.fillStyle = C.muted; ctx.fillRect(sx - R, y - 1.5, 2 * R, 3);
+      for (let k = 0; k < 6; k++) {
+        const th = angle + k * Math.PI / 3; const px = sx + Math.cos(th) * R * 0.85; const wv = Math.abs(Math.sin(th)) * 7 + 1.5;
+        ctx.globalAlpha = Math.sin(th) > 0 ? 1 : 0.45; ctx.fillRect(px - wv / 2, y - 7, wv, 14);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // vessel outline
+    ctx.strokeStyle = C.ink; ctx.lineWidth = 2; rr(ctx, x0, top, x1 - x0, bot - top, 22); ctx.stroke();
+    // baffles
+    ctx.strokeStyle = C.line; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(x0 + 6, ly + 14); ctx.lineTo(x0 + 6, bot - 16); ctx.moveTo(x1 - 6, ly + 14); ctx.lineTo(x1 - 6, bot - 16); ctx.stroke();
+
+    // pH probe (left)
+    const ppx = x0 + (x1 - x0) * 0.2;
+    ctx.strokeStyle = C.ink; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(ppx, top - 26); ctx.lineTo(ppx, ly + (bot - ly) * 0.35); ctx.stroke();
+    // thermometer (right)
+    const tpx = x0 + (x1 - x0) * 0.8;
+    ctx.strokeStyle = C.muted; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(tpx, top - 26); ctx.lineTo(tpx, ly + (bot - ly) * 0.3); ctx.stroke();
+
+    const ff = getComputedStyle(document.body).fontFamily;
+    const mono = getComputedStyle($('clock')).fontFamily;
+    function badge(x, y, label, val, color, align) {
+      ctx.font = `600 13px ${mono}`;
+      const w = Math.max(ctx.measureText(val).width, 40) + 16;
+      const bx = align === 'r' ? x - w : x;
+      ctx.fillStyle = C.surface; ctx.strokeStyle = color; ctx.lineWidth = 1.5; rr(ctx, bx, y, w, 36, 6); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = C.muted; ctx.font = `10px ${mono}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText(label, bx + 8, y + 13);
+      ctx.fillStyle = C.ink; ctx.font = `600 13px ${mono}`; ctx.fillText(val, bx + 8, y + 29);
+    }
+    const phCol = st.pH < 5.0 ? C.bu : st.pH < 5.6 ? C.glc : C.x;
+    badge(4, top - 4, 'pH', st.pH.toFixed(2) + (P.pHset !== null && st.pH <= P.pHset + 0.001 ? ' ●' : ''), phCol);
+    badge(W - 4, top - 4, 'T', P.T.toFixed(0) + ' °C', `hsl(${210 - 190 * tw},65%,50%)`, 'r');
+
+    // off-gas line
+    const gx = sx + (x1 - x0) * 0.16;
+    ctx.strokeStyle = C.muted; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(gx, top - 8); ctx.lineTo(gx, H * 0.06); ctx.lineTo(W - 8, H * 0.06); ctx.stroke();
+    ctx.fillStyle = C.muted; ctx.font = `10px ${mono}`; ctx.textAlign = 'right';
+    ctx.fillText(`H₂+CO₂ ${st.gas.toFixed(2)} L/L·h`, W - 8, H * 0.06 - 6);
+    // strip loop
+    if (P.strip) {
+      ctx.strokeStyle = C.buoh; ctx.setLineDash([5, 4]); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x0 - 18, H * 0.06 + 8); ctx.lineTo(x0 - 18, bot - 6); ctx.lineTo(x0 + 24, bot - 6); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = C.buoh; ctx.textAlign = 'left';
+      ctx.fillText('gaz recirculat', 4, bot + 14 > H ? H - 4 : bot + 14);
+    }
+    // phase badge bottom
+    ctx.textAlign = 'center'; ctx.fillStyle = C.muted; ctx.font = `10px ${mono}`;
+    ctx.fillText('anaerob · spațiu de gaz purjat cu N₂', sx, top + (ly - top) * 0.5);
+  }
+
+  // ---------- charts ----------
+  const PROD = [
+    { k: 'Ac', label: 'Acetat', c: 'ac' }, { k: 'Bu', label: 'Butirat', c: 'bu' },
+    { k: 'Ace', label: 'Acetonă', c: 'ace' }, { k: 'BuOH', label: 'Butanol', c: 'buoh' }, { k: 'EtOH', label: 'Etanol', c: 'et' }];
+  $('legP').innerHTML = PROD.map(p => `<span><i style="background:var(--c-${p.c === 'ac' ? 'ac' : p.c})"></i>${p.label} <b id="lg-${p.k}">0.0</b></span>`).join('');
+
+  const niceMax = (v, step) => Math.max(step, Math.ceil(v / step) * step);
+  function chart(id, series, yMin, yMax, yStep, fmt) {
+    const cvs = $(id); const { ctx, W, H } = fit(cvs);
+    ctx.clearRect(0, 0, W, H);
+    const L = 36, R = 10, T = 8, B = 22;
+    const X = t => L + (t / TEND) * (W - L - R);
+    const Y = v => T + (1 - (v - yMin) / (yMax - yMin)) * (H - T - B);
+    // phase band
+    ctx.fillStyle = C.buoh; ctx.globalAlpha = 0.08;
+    let inB = null;
+    for (const h of hist) { if (h.s > 0.5 && inB === null) inB = h.t; if (h.s <= 0.5 && inB !== null) { ctx.fillRect(X(inB), T, X(h.t) - X(inB), H - T - B); inB = null; } }
+    if (inB !== null) ctx.fillRect(X(inB), T, X(st.t) - X(inB), H - T - B);
+    ctx.globalAlpha = 1;
+    // grid
+    const mono = getComputedStyle($('clock')).fontFamily;
+    ctx.font = `10.5px ${mono}`; ctx.fillStyle = C.muted; ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (let v = yMin; v <= yMax + 1e-9; v += yStep) {
+      const y = Math.round(Y(v)) + .5; ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(W - R, y); ctx.stroke();
+      ctx.fillText(fmt ? fmt(v) : v, L - 6, y);
+    }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (let t = 0; t <= TEND; t += 12) ctx.fillText(t + (t === TEND ? ' h' : ''), Math.min(X(t), W - R - 8), H - B + 6);
+    // ghost
+    ctx.setLineDash([3, 4]); ctx.lineWidth = 1.5; ctx.globalAlpha = 0.5;
+    for (const s of series) {
+      ctx.strokeStyle = C[s.c]; ctx.beginPath();
+      ghost.forEach((h, i) => { const x = X(h.t), y = Y(h[s.k]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke();
+    }
+    ctx.setLineDash([]); ctx.globalAlpha = 1; ctx.lineWidth = 2.2; ctx.lineJoin = 'round';
+    for (const s of series) {
+      ctx.strokeStyle = C[s.c]; ctx.beginPath();
+      hist.forEach((h, i) => { const x = X(h.t), y = Y(h[s.k]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+      ctx.lineTo(X(st.t), Y(s.k === 'pH' ? st.pH : st[s.k])); ctx.stroke();
+      ctx.fillStyle = C[s.c]; ctx.beginPath(); ctx.arc(X(st.t), Y(s.k === 'pH' ? st.pH : st[s.k]), 3.2, 0, Math.PI * 2); ctx.fill();
+    }
+    // now line
+    ctx.strokeStyle = C.ink; ctx.globalAlpha = 0.35; ctx.beginPath(); ctx.moveTo(X(st.t) + .5, T); ctx.lineTo(X(st.t) + .5, H - B); ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  function drawCharts() {
+    if (!st || !C.ink) return;
+    let pm = 0; for (const arr of [hist, ghost]) for (const h of arr) for (const p of PROD) pm = Math.max(pm, h[p.k]);
+    const pMax = niceMax(pm * 1.05, 2);
+    chart('chP', PROD.map(p => ({ k: p.k, c: p.c })), 0, pMax, pMax > 12 ? 4 : 2);
+    const sMax = niceMax(P.S0, 20);
+    chart('chS', [{ k: 'S', c: 'glc' }], 0, sMax, sMax / 4);
+    let xm = 0; for (const arr of [hist, ghost]) for (const h of arr) xm = Math.max(xm, h.X);
+    chart('chX', [{ k: 'X', c: 'x' }], 0, niceMax(xm * 1.05, 1), niceMax(xm * 1.05, 1) > 4 ? 2 : 1);
+    chart('chpH', [{ k: 'pH', c: 'ph' }], 4, 7, 0.5, v => v.toFixed(1));
+  }
+
+  // ---------- pathway + DOM ----------
+  const EDGES = {
+    'e-gp': f => f.glc / 2.2, 'e-pa': f => f.glc / 2.2,
+    'e-acet': f => f.acAc / 0.22, 'e-acetR': f => f.uAc / 0.15, 'e-etoh': f => f.et / 0.06,
+    'e-aacoa': f => (f.acBu + f.solBu + f.ace) / 0.55, 'e-aa': f => f.ace / 0.22, 'e-acetone': f => f.ace / 0.22,
+    'e-bcoa': f => (f.acBu + f.solBu) / 0.45, 'e-but': f => f.acBu / 0.45, 'e-butR': f => f.uBu / 0.3, 'e-buoh': f => f.bol / 0.45
+  };
+  const edgeEls = Object.fromEntries(Object.keys(EDGES).map(k => [k, $(k)]));
+  function phaseInfo() {
+    if (st.t >= TEND - 1e-6) return ['Lot încheiat', 'muted', 'Fermentația s-a terminat. Compară curbele cu alte setări folosind „Reia lotul”.'];
+    if (st.S < 1 && st.t > 5) return ['Glucoză epuizată', 'muted', 'Nu mai există substrat. Celulele intră în staționar și sporulează.'];
+    if (st.inhB < 0.3) return ['Inhibiție de butanol', 'bu', 'Butanolul fluidizează membrana. Consumul de glucoză aproape se oprește.'];
+    if (st.s < 0.15 && P.redox >= 0.5 && st.t > 6) return ['Alcoologeneză', 'et', 'Excesul de NADH activează adhE2: carbonul merge direct spre butanol și etanol, fără comutarea pe acetonă. Se formează mai puțini acizi.'];
+    if (st.s < 0.15) return ['Acidogeneză', 'ac', P.pHset !== null && st.t > 15 ? 'pH-ul controlat ține acizii disociați; celulele continuă să producă acetat și butirat.' : 'Celulele cresc exponențial și produc acetat și butirat, plus H₂ și CO₂. pH-ul scade.'];
+    if (st.s < 0.75) return ['Comutare', 'glc', 'Acizii nedisociați declanșează Spo0A și genele sol. Producția de acizi scade, începe cea de solvenți.'];
+    return ['Solventogeneză', 'buoh', 'Acizii sunt reasimilați prin CoA-transferază. Se formează butanol, acetonă și etanol; pH-ul urcă ușor.'];
+  }
+  function updateDOM() {
+    $('clock').textContent = st.t.toFixed(1);
+    const f1 = v => v.toFixed(1), f2 = v => v.toFixed(2);
+    $('rS').innerHTML = `${f1(st.S)} <small>g/L</small>`;
+    $('rX').innerHTML = `${f2(st.X)} <small>g/L</small>`;
+    $('rpH').textContent = st.pH.toFixed(2);
+    $('rG').innerHTML = `${f2(st.gas)} <small>L/L·h</small>`;
+    const abe = st.Ace + st.BuOH + st.EtOH;
+    $('rABE').innerHTML = `${f1(abe + st.rec)} <small>g/L</small>`;
+    if (abe > 0.3) {
+      const pa = 100 * st.Ace / abe, pb = 100 * st.BuOH / abe, pe = 100 * st.EtOH / abe;
+      $('rRat').innerHTML = `${pb.toFixed(0)} <small>%</small>`;
+      $('pA').textContent = pa.toFixed(0) + ' %'; $('pB').textContent = pb.toFixed(0) + ' %'; $('pE').textContent = pe.toFixed(0) + ' %';
+      $('mxA').style.width = pa + '%'; $('mxB').style.width = pb + '%'; $('mxE').style.width = pe + '%';
+    } else {
+      $('rRat').innerHTML = '– <small>%</small>';
+      for (const k of ['pA', 'pB', 'pE']) $(k).textContent = '–';
+      for (const k of ['mxA', 'mxB', 'mxE']) $(k).style.width = '0';
+    }
+    const used = P.S0 - st.S;
+    $('rY').innerHTML = used > 2 && abe > 0.3 ? `${((abe + st.rec) / used).toFixed(2)} <small>g/g</small>` : '– <small>g/g</small>';
+    $('rRec').innerHTML = `${f1(st.rec)} <small>g/L</small>`;
+    for (const p of PROD) $('lg-' + p.k).textContent = st[p.k].toFixed(1);
+    const [name, col, text] = phaseInfo();
+    const chip = $('phaseChip'); chip.textContent = name; chip.style.color = `var(--${col === 'muted' ? 'muted' : 'c-' + col})`;
+    $('phaseText').textContent = text;
+    const active = playing && st.t < TEND;
+    for (const [k, fn] of Object.entries(EDGES)) {
+      const i = Math.max(0, Math.min(1, fn(st.fl) || 0)); const el = edgeEls[k];
+      el.style.opacity = (0.14 + 0.86 * i).toFixed(2); el.style.strokeWidth = (1.4 + 3.4 * i).toFixed(2);
+      el.classList.toggle('flow', active && i > 0.08 && !reduceMotion);
+    }
+    $('play').textContent = playing ? 'Pauză' : (st.t >= TEND - 1e-6 ? 'Reia' : (st.t > 0 ? 'Continuă' : 'Pornește'));
+  }
+
+  // ---------- controls ----------
+  function paramChanged(msg) { computeGhost(); if (st.t > 0.05 && msg) logEvent(msg); updateDOM(); drawCharts(); }
+  $('glc').addEventListener('input', e => { P.S0 = +e.target.value; $('glcO').textContent = P.S0 + ' g/L'; reset(); });
+  $('temp').addEventListener('input', e => { P.T = +e.target.value; $('tempO').textContent = P.T + ' °C'; computeGhost(); updateDOM(); drawCharts(); });
+  $('temp').addEventListener('change', () => paramChanged(`Temperatura setată la ${P.T} °C.`));
+  $('phc').addEventListener('change', e => { P.pHset = e.target.value === '' ? null : +e.target.value; flags.held = false;
+    paramChanged(P.pHset === null ? 'Controlul pH-ului a fost oprit.' : `Controlul pH-ului pornit: pH ≥ ${P.pHset.toFixed(1)}.`); });
+  const REDOX = { '0': 'glucoză standard', '0.35': 'presiune de H₂ ridicată', '0.7': 'glucoză + glicerol', '1': 'glucoză + metil-viologen' };
+  $('redox').addEventListener('change', e => { P.redox = +e.target.value; flags.alc = false;
+    paramChanged(`Echilibru redox schimbat: ${REDOX[e.target.value]}.`); });
+  $('strip').addEventListener('change', e => { P.strip = e.target.checked; paramChanged(P.strip ? 'Pornește stripping-ul cu gaz: butanolul este îndepărtat continuu.' : 'Stripping-ul cu gaz a fost oprit.'); });
+  $('speed').addEventListener('input', e => { P.speed = +e.target.value; $('speedO').textContent = P.speed + ' h/s'; });
+  $('play').addEventListener('click', () => { if (st.t >= TEND - 1e-6) { reset(); playing = true; } else playing = !playing; if (playing && st.t < 0.01 && !events.length) logEvent(`Inoculare: ${P.S0} g/L glucoză, ${P.T} °C, mediu purjat cu N₂.`); updateDOM(); });
+  $('reset').addEventListener('click', () => { playing = false; reset(); });
+
+  // ---------- loop ----------
+  let last = performance.now(), domAcc = 0;
+  function frame(now) {
+    const dtReal = Math.min(0.1, (now - last) / 1000); last = now;
+    if (playing && st.t < TEND) {
+      simAcc += P.speed * dtReal;
+      while (simAcc >= DT && st.t < TEND - 1e-9) {
+        step(st, DT); simAcc -= DT;
+        if (st.t >= lastRec + REC - 1e-9) { hist.push(snap(st)); lastRec += REC; }
+        checkEvents();
+      }
+      if (st.t >= TEND - 1e-9) { st.t = TEND; checkEvents(); playing = false; updateDOM(); drawCharts(); }
+      domAcc += dtReal;
+      if (domAcc > 0.12) { domAcc = 0; updateDOM(); drawCharts(); }
+    }
+    drawReactor(dtReal);
+    requestAnimationFrame(frame);
+  }
+  window.addEventListener('resize', () => drawCharts());
+
+  // init
+  st = newState(); hist = [snap(st)]; ghost = []; events = []; flags = {};
+  readTokens(); reset();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => drawCharts());
+  if (!reduceMotion) { playing = true; logEvent(`Inoculare: ${P.S0} g/L glucoză, ${P.T} °C, mediu purjat cu N₂.`); updateDOM(); }
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body></html>
